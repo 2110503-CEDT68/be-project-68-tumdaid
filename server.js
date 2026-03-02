@@ -6,8 +6,7 @@ const dotenv = require("dotenv");
 const cookieParser = require("cookie-parser");
 const connectDB = require("./config/db");
 const helmet = require("helmet");
-const xss = require("xss-clean");
-
+const { xss } = require("express-xss-sanitizer");
 
 //Load env vars
 dotenv.config({ path: "./config/config.env" });
