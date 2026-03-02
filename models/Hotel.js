@@ -31,7 +31,9 @@ const HotelSchema = new mongoose.Schema({
     },
     tel:{
         type: String,
-        required: [true, 'Please add a telephone number']
+        required: [true, 'Please add a telephone number'],
+        minlength: 10,
+        maxlength: 10
     },
 },
     {
