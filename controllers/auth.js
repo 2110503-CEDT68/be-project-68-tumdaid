@@ -13,18 +13,22 @@ exports.register = async (req, res, next) => {
   try {
     const { name, email, password, role, tel } = req.body;
 
-    if (!isNonEmptyString(name) || 
-        !isNonEmptyString(email) || 
-        !isNonEmptyString(password) ||
-        !isNonEmptyString(tel)) {
+    // Manual validation 
+    if (!isNonEmptyString(name) || !isNonEmptyString(email) || !isNonEmptyString(password)) {
       return res.status(400).json({
         success: false,
         msg: "name, email, password, and tel are required",
       });
     }
 
+    if (name.length > 60 || email.length > 100 || password.length > 100) {
+      return res.status(400).json({ success: false, msg: "Input too long" });
+    }
+
+    // simple email format check 
     const emailNorm = normalizeEmail(email);
 
+    // Role whitelist 
     const allowedRoles = ["user", "admin"];
     const safeRole = role && typeof role === "string" ? role : "user";
 
@@ -33,7 +37,7 @@ exports.register = async (req, res, next) => {
       email: emailNorm,
       password,
       role: safeRole,
-      tel: tel.trim(), // 🔥 เพิ่มตรงนี้
+      tel: tel.trim(), 
     });
 
     sendTokenResponse(user, 200, res);
@@ -56,6 +60,12 @@ exports.login = async (req, res, next) => {
         success: false,
         msg: "Please provide tel/email and password"
       });
+    } 
+    // Manual validation
+    if (!email || !password) {
+      return res
+        .status(400)
+        .json({ success: false, msg: "Please provide an email and password" });
     }
 
     if (typeof identifier !== "string" || typeof password !== "string") {
@@ -77,10 +87,7 @@ exports.login = async (req, res, next) => {
     const user = await User.findOne(query).select("+password");
 
     if (!user) {
-      return res.status(401).json({
-        success: false,
-        msg: "Invalid credentials"
-      });
+      return res.status(401).json({ success: false, msg: "Invalid credentials" });
     }
 
     const isMatch = await user.matchPassword(password);
@@ -96,10 +103,7 @@ exports.login = async (req, res, next) => {
 
   } catch (err) {
     console.log(err.stack);
-    return res.status(500).json({
-      success: false,
-      msg: "Server error"
-    });
+    return res.status(500).json({ success: false, msg: "Server error cannot login" });
   }
 };
 
@@ -113,6 +117,7 @@ const sendTokenResponse = (user, statusCode, res) => {
     ),
     httpOnly: true,
     sameSite: "lax", 
+    
   };
 
   if (process.env.NODE_ENV === "production") {
