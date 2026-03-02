@@ -1,4 +1,4 @@
-const Hotels = require("../models/Hotels");
+const Hotels = require("../models/Hotel.js");
 const Appointment = require("../models/Appointment.js");
 
 //get all hospitals
