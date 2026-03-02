@@ -6,7 +6,6 @@ const BookingSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
-
   hotel: {
     type: mongoose.Schema.ObjectId,
     ref: 'Hotel',
@@ -16,7 +15,6 @@ const BookingSchema = new mongoose.Schema({
     type: Date,
     required: true
   },
-
   checkOutDate: {
     type: Date,
     required: true
