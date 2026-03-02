@@ -1,5 +1,5 @@
 const Booking = require("../models/Booking");
-const Hotels = require("../models/Hotel");
+const Hotel = require("../models/Hotel");
 
 exports.getBookings = async (req, res, next) => {
   let query;
@@ -66,7 +66,7 @@ exports.addBooking = async (req, res, next) => {
 
     
 
-    const hotel = await Hotels.findById(req.params.hotelId);
+    const hotel = await Hotel.findById(req.params.hotelId);
     if (!hotel) {
       return res.status(404).json({
         success: false,
