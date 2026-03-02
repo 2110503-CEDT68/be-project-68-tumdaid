@@ -14,7 +14,7 @@ exports.register = async (req, res, next) => {
     const { name, email, password, role, tel } = req.body;
 
     // Manual validation 
-    if (!isNonEmptyString(name) || !isNonEmptyString(email) || !isNonEmptyString(password)) {
+    if (!isNonEmptyString(name) || !isNonEmptyString(email) || !isNonEmptyString(password) || !isNonEmptyString(tel)) {
       return res.status(400).json({
         success: false,
         msg: "name, email, password, and tel are required",
@@ -61,12 +61,6 @@ exports.login = async (req, res, next) => {
         msg: "Please provide tel/email and password"
       });
     } 
-    // Manual validation
-    if (!email || !password) {
-      return res
-        .status(400)
-        .json({ success: false, msg: "Please provide an email and password" });
-    }
 
     if (typeof identifier !== "string" || typeof password !== "string") {
       return res.status(400).json({
@@ -79,6 +73,7 @@ exports.login = async (req, res, next) => {
 
     // detect email
     if (identifier.includes("@")) {
+      const emailNorm = normalizeEmail(identifier);
       query.email = identifier;
     } else {
       query.tel = identifier;
