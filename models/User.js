@@ -26,14 +26,16 @@ const UserSchema=new mongoose.Schema({
         required:[true,'Please add a password'],
         minlength: 6,
         select: false
-    },tel: {
-      type: String,
-      required: [true, "Please add a telephone number"],
-      trim: true,
-      match: [
-        /^\d{3}-\d{3}-\d{4}$/,
-        'Telephone number format must be "xxx-xxx-xxxx" (e.g. 012-345-6789)',
-      ],
+    },
+    tel: {
+        type: String,
+        required: [true, "Please add a telephone number"],
+        unique: true,
+        trim: true,
+        match: [
+            /^\d{3}-\d{3}-\d{4}$/,
+            'Telephone number format must be "xxx-xxx-xxxx" (e.g. 012-345-6789)',
+        ],
     },
     resetPasswordToken: String,     
     resetPasswordExpire: Date,
@@ -45,6 +47,10 @@ const UserSchema=new mongoose.Schema({
 
 //Encrypt password using bcrypt
 UserSchema.pre('save',async function(next){
+    if (!this.isModified('password')) {
+        return next();
+    }
+
     const salt=await bcrypt.genSalt(10);
     this.password=await bcrypt.hash(this.password,salt);
 });
