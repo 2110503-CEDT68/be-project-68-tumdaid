@@ -29,11 +29,14 @@ const HotelSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Please add a region']
     },
-    tel:{
-        type: String,
-        required: [true, 'Please add a telephone number'],
-        minlength: 10,
-        maxlength: 10
+    tel: {
+      type: String,
+      required: [true, "Please add a telephone number"],
+      trim: true,
+      match: [
+        /^\d{3}-\d{3}-\d{4}$/,
+        'Telephone number format must be "xxx-xxx-xxxx" (e.g. 012-345-6789)',
+      ],
     },
 },
     {
