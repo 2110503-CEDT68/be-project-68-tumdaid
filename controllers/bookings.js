@@ -72,24 +72,62 @@ exports.addBooking = async (req, res, next) => {
       });
     }
 
-    req.body.user=req.user.id;
+    req.body.user = req.user.id;
 
-    const existedBookings = await Booking.find({user:req.user.id});
+    const { checkInDate, checkOutDate } = req.body;
 
-    if(existedBookings.length>=3 && req.user.role !== 'admin'){
-        return res.status(400).json({success:false,message:`The user with ID ${req.user.id} has already made 3 bookings`});
+    if (!checkInDate || !checkOutDate) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide checkInDate and checkOutDate",
+      });
+    }
 
+    const inDate = new Date(checkInDate);
+    const outDate = new Date(checkOutDate);
+
+    const checkIn = new Date(inDate.getFullYear(), inDate.getMonth(), inDate.getDate());
+    const checkOut = new Date(outDate.getFullYear(), outDate.getMonth(), outDate.getDate());
+
+    // validate date
+    if (isNaN(checkIn) || isNaN(checkOut)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid date format",
+      });
+    }
+
+    if (checkOut <= checkIn) {
+      return res.status(400).json({
+        success: false,
+        message: "checkOutDate must be after checkInDate",
+      });
+    }
+
+    const MS_PER_DAY = 1000 * 60 * 60 * 24;
+    const days = (checkOut - checkIn) / MS_PER_DAY;
+
+    // max 3 days
+    if (req.user.role !== "admin" && days > 3) {
+      return res.status(400).json({
+        success: false,
+        message: "Booking cannot exceed 3 days",
+      });
     }
 
     const booking = await Booking.create(req.body);
 
     return res.status(200).json({
       success: true,
-      data: booking
+      data: booking,
     });
+
   } catch (err) {
     console.log(err);
-    return res.status(500).json({ success: false, message: "Cannot create booking" });
+    return res.status(500).json({
+      success: false,
+      message: "Cannot create booking",
+    });
   }
 };
 

@@ -27,10 +27,17 @@ exports.register = async (req, res, next) => {
 
     // simple email format check 
     const emailNorm = normalizeEmail(email);
+     if (!emailNorm.includes("@") || !emailNorm.includes(".")) {
+      return res.status(400).json({ success: false, msg: "Invalid email format" });
+    }
 
     // Role whitelist 
     const allowedRoles = ["user", "admin"];
-    const safeRole = role && typeof role === "string" ? role : "user";
+
+    let safeRole = "user";
+    if (role && typeof role === "string" && allowedRoles.includes(role)) {
+        safeRole = role;
+    }
 
     const user = await User.create({
       name: name.trim(),
@@ -74,7 +81,7 @@ exports.login = async (req, res, next) => {
     // detect email
     if (identifier.includes("@")) {
       const emailNorm = normalizeEmail(identifier);
-      query.email = identifier;
+      query.email = emailNorm;
     } else {
       query.tel = identifier;
     }
