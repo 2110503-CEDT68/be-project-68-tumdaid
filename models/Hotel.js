@@ -37,11 +37,10 @@ const HotelSchema = new mongoose.Schema({
     {
         toJSON: {virtuals:true},
         toObject:{virtuals:true}
-    
 });
 
-HotelSchema.virtual('appointments',{
-    ref:'Appointment',
+HotelSchema.virtual('bookings',{
+    ref:'Booking',
     localField:'_id',
     foreignField:'hotel',
     justOne:false
