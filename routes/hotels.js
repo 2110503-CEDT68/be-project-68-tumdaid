@@ -1,5 +1,5 @@
 const express = require('express');
-const {getHotels,getHotel,createHotel,updateHotel,deleteHotel} = require('../controllers/hospitals')
+const {getHotels,getHotel,createHotel,updateHotel,deleteHotel} = require('../controllers/hotels');
 
 //Include other resource routers
 const bookingRoute=require('./bookings');
