@@ -3,24 +3,39 @@ const User = require('../models/User');
 //@desc   Register user
 //@route  POST /api/v1/auth/register
 //@access Public
-exports.register = async (req,res,next)=>{ 
-    try{
-        const {name, email, password, role} = req.body;
-        //Create user
-        const user = await User.create({
-            name, 
-            email,
-            password, 
-            role
-        });
-        //Create token
-        //const token = user.getSignedJwtToken();
-        //res.status(200).json({success:true,token});
-        sendTokenResponse (user, 200, res);
-    }catch(err){ 
-        res.status(400).json({success:false}); 
-        console.log(err.stack);
+exports.register = async (req, res, next) => {
+  try {
+    const { name, email, password, role, tel } = req.body;
+
+    if (!isNonEmptyString(name) || 
+        !isNonEmptyString(email) || 
+        !isNonEmptyString(password) ||
+        !isNonEmptyString(tel)) {
+      return res.status(400).json({
+        success: false,
+        msg: "name, email, password, and tel are required",
+      });
     }
+
+    const emailNorm = normalizeEmail(email);
+
+    const allowedRoles = ["user", "admin"];
+    const safeRole = role && typeof role === "string" ? role : "user";
+
+    const user = await User.create({
+      name: name.trim(),
+      email: emailNorm,
+      password,
+      role: safeRole,
+      tel: tel.trim(), // 🔥 เพิ่มตรงนี้
+    });
+
+    sendTokenResponse(user, 200, res);
+
+  } catch (err) {
+    console.log(err.stack);
+    res.status(400).json({ success: false });
+  }
 };
 
 //@desc   Login user
