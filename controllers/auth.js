@@ -1,4 +1,5 @@
 const User = require("../models/User");
+const Booking = require("../models/Booking");
 
 // small helpers (manual validation)
 const isNonEmptyString = (v) => typeof v === "string" && v.trim().length > 0;
@@ -48,44 +49,57 @@ exports.register = async (req, res, next) => {
 //@access Public
 exports.login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const { identifier, password } = req.body;
 
-    // ✅ Manual validation (BEFORE DB)
-    if (!email || !password) {
-      return res
-        .status(400)
-        .json({ success: false, msg: "Please provide an email and password" });
+    if (!identifier || !password) {
+      return res.status(400).json({
+        success: false,
+        msg: "Please provide tel/email and password"
+      });
     }
 
-    // Type checks stop NoSQL injection payloads like: { email: { $gt: "" } }
-    if (typeof email !== "string" || typeof password !== "string") {
-      return res.status(400).json({ success: false, msg: "Invalid input type" });
+    if (typeof identifier !== "string" || typeof password !== "string") {
+      return res.status(400).json({
+        success: false,
+        msg: "Invalid input type"
+      });
     }
 
-    if (email.length > 100 || password.length > 100) {
-      return res.status(400).json({ success: false, msg: "Input too long" });
+    let query = {};
+
+    // detect email
+    if (identifier.includes("@")) {
+      query.email = identifier;
+    } else {
+      query.tel = identifier;
     }
 
-    const emailNorm = normalizeEmail(email);
+    const user = await User.findOne(query).select("+password");
 
-    //Check for user
-    const user = await User.findOne({ email: emailNorm }).select("+password");
     if (!user) {
-      // Usually 401 is better than 400 for bad credentials
-      return res.status(401).json({ success: false, msg: "Invalid credentials" });
+      return res.status(401).json({
+        success: false,
+        msg: "Invalid credentials"
+      });
     }
 
-    //Check if password matches
     const isMatch = await user.matchPassword(password);
+
     if (!isMatch) {
-      return res.status(401).json({ success: false, msg: "Invalid credentials" });
+      return res.status(401).json({
+        success: false,
+        msg: "Invalid credentials"
+      });
     }
 
     sendTokenResponse(user, 200, res);
+
   } catch (err) {
-    // This message is misleading; only return generic error
     console.log(err.stack);
-    return res.status(500).json({ success: false, msg: "Server error" });
+    return res.status(500).json({
+      success: false,
+      msg: "Server error"
+    });
   }
 };
 
@@ -98,7 +112,7 @@ const sendTokenResponse = (user, statusCode, res) => {
       Date.now() + process.env.JWT_COOKIE_EXPIRE * 24 * 60 * 60 * 1000
     ),
     httpOnly: true,
-    sameSite: "lax", // ✅ good default
+    sameSite: "lax", 
   };
 
   if (process.env.NODE_ENV === "production") {
@@ -127,4 +141,145 @@ exports.logout = async (req, res, next) => {
     secure: process.env.NODE_ENV === "production",
   });
   res.status(200).json({ success: true, data: {} });
+};
+
+//@update user
+//@route PUT /api/v1/auth/:id
+//@access Private
+exports.updateUser = async (req, res, next) => {
+  try {
+    // 1) user can update only themselves; admin can update anyone
+    if (req.user.role !== "admin" && req.user.id !== req.params.id) {
+      return res.status(403).json({
+        success: false,
+        msg: "Not authorized to update this user"
+      });
+    }
+
+    // 2) whitelist fields (prevent role escalation, reset token edits, etc.)
+    const allowedFields = ["name", "email", "tel"]; 
+    const updates = {};
+
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined) updates[field] = req.body[field];
+    }
+
+    // Optional: block role updates even for admin (remove if you want admin to change role)
+    if (req.body.role !== undefined) {
+      return res.status(400).json({
+        success: false,
+        msg: "Role cannot be updated here"
+      });
+    }
+
+    const user = await User.findByIdAndUpdate(req.params.id, updates, {
+      new: true,
+      runValidators: true
+    });
+
+    if (!user) {
+      return res.status(404).json({ success: false, msg: "User not found"});
+    }
+
+    return res.status(200).json({ success: true, data: user });
+  } catch (err) {
+    // handle duplicate key (email/tel unique)
+    if (err.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        msg: "Email or tel already exists"
+      });
+    }
+
+    return res.status(500).json({ success: false, msg: "Server error" });
+  }
+};
+
+exports.updatePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!newPassword) {
+      return res.status(400).json({ success: false, msg: "Please provide newPassword" });
+    }
+
+    if (typeof newPassword !== "string") {
+      return res.status(400).json({ success: false, msg: "Invalid input type" });
+    }
+
+    // Authorization: user only self; admin any
+    const isAdmin = req.user.role === "admin";
+    const isSelf = req.user.id === req.params.id;
+
+    if (!isAdmin && !isSelf) {
+      return res.status(403).json({ success: false, msg: "Not authorized" });
+    }
+
+    // Load user with password
+    const user = await User.findById(req.params.id).select("+password");
+    if (!user) {
+      return res.status(404).json({ success: false, msg: "User not found" });
+    }
+
+    // If normal user, require currentPassword
+    if (!isAdmin) {
+      if (!currentPassword || typeof currentPassword !== "string") {
+        return res.status(400).json({ success: false, msg: "Please provide currentPassword" });
+      }
+
+      const match = await user.matchPassword(currentPassword);
+      if (!match) {
+        return res.status(401).json({ success: false, msg: "Current password is incorrect" });
+      }
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    return res.status(200).json({ success: true, msg: "Password updated" });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ success: false, msg: "Server error" });
+  }
+};
+
+//delete user
+//route : delete /api/v1/auth/:id
+exports.deleteUser = async (req, res, next) => {
+  try {
+    const isAdmin = req.user.role === "admin";
+    const isSelf = req.user.id === req.params.id;
+
+    if (!isAdmin && !isSelf) {
+      return res.status(403).json({
+        success: false,
+        msg: "Not authorized to delete this user"
+      });
+    }
+
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        msg: `User not found with id ${req.params.id}`
+      });
+    }
+
+    await Booking.deleteMany({ user: req.params.id });
+
+    await User.deleteOne({ _id: req.params.id });
+
+    res.status(200).json({
+      success: true,
+      data: {}
+    });
+
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({
+      success: false,
+      msg: "Server error"
+    });
+  }
 };
