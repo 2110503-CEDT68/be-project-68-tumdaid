@@ -1,6 +1,5 @@
 const Hotel = require("../models/Hotel");
 const Booking = require("../models/Booking");
-const sanitizeHtml = require("sanitize-html");
 
 //get all hotels
 //route : GET /api/v1/hotels
@@ -92,12 +91,7 @@ exports.getHotel = async (req, res, next) => {
 
 //create hotel
 //route : Post /api/v1/hotels
-exports.createHotel = async (req, res, next) => {
-  req.body.name = sanitizeHtml(req.body.name, {
-    allowedTags: [],
-    allowedAttributes: {}
-  });
-  
+exports.createHotel = async (req, res, next) => {  
   const hotel = await Hotel.create(req.body);
 
   res.status(201).json({ success: true, data: hotel });

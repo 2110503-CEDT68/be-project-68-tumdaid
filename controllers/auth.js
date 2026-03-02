@@ -10,45 +10,36 @@ const normalizeEmail = (email) => email.trim().toLowerCase();
 //@access Public
 exports.register = async (req, res, next) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, tel } = req.body;
 
-    // ✅ Manual validation (BEFORE DB)
-    if (!isNonEmptyString(name) || !isNonEmptyString(email) || !isNonEmptyString(password)) {
+    if (!isNonEmptyString(name) || 
+        !isNonEmptyString(email) || 
+        !isNonEmptyString(password) ||
+        !isNonEmptyString(tel)) {
       return res.status(400).json({
         success: false,
-        msg: "name, email, and password are required",
+        msg: "name, email, password, and tel are required",
       });
     }
 
-    if (name.length > 60 || email.length > 100 || password.length > 100) {
-      return res.status(400).json({ success: false, msg: "Input too long" });
-    }
-
-    // simple email format check (manual)
     const emailNorm = normalizeEmail(email);
-    if (!emailNorm.includes("@") || !emailNorm.includes(".")) {
-      return res.status(400).json({ success: false, msg: "Invalid email format" });
-    }
 
-    // ✅ Role whitelist (adjust to your app)
     const allowedRoles = ["user", "admin"];
     const safeRole = role && typeof role === "string" ? role : "user";
-    if (!allowedRoles.includes(safeRole)) {
-      return res.status(400).json({ success: false, msg: "Invalid role" });
-    }
 
-    //Create user
     const user = await User.create({
       name: name.trim(),
       email: emailNorm,
       password,
       role: safeRole,
+      tel: tel.trim(), // 🔥 เพิ่มตรงนี้
     });
 
     sendTokenResponse(user, 200, res);
+
   } catch (err) {
-    res.status(400).json({ success: false });
     console.log(err.stack);
+    res.status(400).json({ success: false });
   }
 };
 
