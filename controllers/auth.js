@@ -9,6 +9,7 @@ exports.register = async (req, res, next) => {
       email,
       password,
       role,
+      tel
     });
     //const token = user.getSignedJwtToken();
 
