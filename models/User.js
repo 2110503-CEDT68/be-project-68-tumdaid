@@ -35,7 +35,7 @@ const UserSchema=new mongoose.Schema({
         'Telephone number format must be "xxx-xxx-xxxx" (e.g. 012-345-6789)',
       ],
     },
-    resetPasswordToken: String,
+    resetPasswordToken: String,     
     resetPasswordExpire: Date,
     createdAt:{
         type: Date,
