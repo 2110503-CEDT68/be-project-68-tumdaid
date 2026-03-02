@@ -1,5 +1,5 @@
-const Hotel = require("../models/Hotel.js");
-const Booking = require("../models/Booking.js");
+const Hotel = require("../models/Hotel");
+const Booking = require("../models/Booking");
 
 //get all hotels
 //route : GET /api/v1/hotels
