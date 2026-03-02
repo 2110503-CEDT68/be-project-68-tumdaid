@@ -27,7 +27,7 @@ const HotelSchema = new mongoose.Schema({
     },
     tel:{
         type: String,
-        required: [true, 'Please add a telephone number']
+required: [true, 'Please add a telephone number']
     },
     region:{
         type: String,
@@ -37,6 +37,7 @@ const HotelSchema = new mongoose.Schema({
     {
         toJSON: {virtuals:true},
         toObject:{virtuals:true}
+    
 });
 
 HotelSchema.virtual('bookings',{
