@@ -25,13 +25,13 @@ const HotelSchema = new mongoose.Schema({
         required: [true, 'Please add a postalcode'], 
         maxlength:[5, 'Postal Code can not be more than 5 digits']
     },
-    tel:{
-        type: String,
-        required: [true, 'Please add a telephone number']
-    },
     region:{
         type: String,
         required: [true, 'Please add a region']
+    },
+    tel:{
+        type: String,
+        required: [true, 'Please add a telephone number']
     },
 },
     {
