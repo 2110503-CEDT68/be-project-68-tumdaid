@@ -52,6 +52,17 @@ exports.getBooking = async (req,res,next) =>{
         success:true,
         data:booking
     })
+
+    if (
+      booking.user.toString() !== req.user.id &&
+      req.user.role !== "admin"
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to access this booking"
+      });
+    }
+
     } catch(error){
             console.log(error);
             return res.status(500).json({success:false,message:"Cannot find Booking"});
