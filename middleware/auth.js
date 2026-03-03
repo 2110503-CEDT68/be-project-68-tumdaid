@@ -42,7 +42,7 @@ exports.authorize = (...roles) => {
         .status(403)
         .json({
           success: false,
-          message: `๊User role ${req.user.role} is not authorized to access this route`,
+          message: `User role ${req.user.role} is not authorized to access this route`,
         });
     }
     next();
