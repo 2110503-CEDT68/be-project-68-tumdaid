@@ -83,7 +83,9 @@ exports.addBooking = async (req, res, next) => {
       });
     }
 
+    if (req.user.role !== "admin") {
     req.body.user = req.user.id;
+  }
 
     const { checkInDate, checkOutDate } = req.body;
 
